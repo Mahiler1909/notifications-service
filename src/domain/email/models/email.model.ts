@@ -2,8 +2,15 @@ import { Receiver } from './receiver.model';
 
 export class Email {
   constructor(
-    public templateId: number,
+    public readonly templateId: number,
     public readonly parameters: Record<string, unknown>,
     public readonly receivers: Array<Receiver>,
-  ) {}
+  ) {
+    if (templateId <= 0) {
+      throw new Error(`Invalid templateId: ${templateId}`);
+    }
+    if (!receivers.length) {
+      throw new Error('At least one receiver is required');
+    }
+  }
 }

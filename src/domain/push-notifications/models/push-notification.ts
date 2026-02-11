@@ -1,8 +1,15 @@
 export class PushNotification {
   constructor(
-    public title: string,
-    public body: string,
-    public imageUrl: string | null,
-    public payload: Record<string, unknown>,
-  ) {}
+    public readonly title: string,
+    public readonly body: string,
+    public readonly imageUrl: string | null,
+    public readonly payload: Record<string, string>,
+  ) {
+    if (!title.trim()) {
+      throw new Error('Push notification title cannot be empty');
+    }
+    if (!body.trim()) {
+      throw new Error('Push notification body cannot be empty');
+    }
+  }
 }

@@ -1,76 +1,82 @@
-import { Module } from '@nestjs/common';
+import { Module, Provider } from '@nestjs/common';
 import { SendInBlueEmailService } from './services/send-in-blue-email.service';
-// import {
-//   FcmPushNotificationService,
-//   GoogleJWTToken,
-// } from './services/fcm-push-notification.service';
-
-import admin, { ServiceAccount } from 'firebase-admin';
+import admin from 'firebase-admin';
 import { PushNotificationServiceToken } from '../domain/push-notifications/interfaces/push-notification-service.interface';
 import { EmailServiceToken } from '../domain/email/interfaces/email-service.interface';
 import { EmailProviderOptions } from './configuration/options/email-provider-options';
 import { ConfigurationModule } from './configuration/configuration.module';
-import * as serviceAccount from '../../configuration/firebase-adminsdk.json';
 import {
   TransactionalEmailsApi,
   TransactionalEmailsApiApiKeys,
 } from '@sendinblue/client';
-// import { JWT } from 'google-auth-library';
 import {
   FcmSdkPushNotificationService,
   GoogleMessagingToken,
 } from './services/fcm-sdk-push-notification.service';
+import {
+  FcmPushNotificationService,
+  GoogleJWTToken,
+} from './services/fcm-push-notification.service';
+import { JWT } from 'google-auth-library';
 
-// const services = [SendInBlueEmailService, FcmPushNotificationService];
-const services = [SendInBlueEmailService, FcmSdkPushNotificationService];
-// const dependencyInversionServices = [
-//   { provide: EmailServiceToken, useExisting: SendInBlueEmailService },
-//   {
-//     provide: PushNotificationServiceToken,
-//     useExisting: FcmPushNotificationService,
-//   },
-// ];
-const dependencyInversionServices = [
-  { provide: EmailServiceToken, useExisting: SendInBlueEmailService },
-  {
-    provide: PushNotificationServiceToken,
-    useExisting: FcmSdkPushNotificationService,
-  },
-];
+type PushProvider = 'sdk' | 'http';
 
-@Module({
-  providers: [
-    ...services,
-    ...dependencyInversionServices,
-    // {
-    //   provide: GoogleJWTToken,
-    //   useFactory: () => {
-    //     return new JWT(
-    //       serviceAccount.client_email,
-    //       null,
-    //       serviceAccount.private_key,
-    //       [FcmPushNotificationService.MESSAGING_SCOPE],
-    //       null,
-    //     );
-    //   },
-    // },
+function buildPushNotificationProviders(provider: PushProvider): Provider[] {
+  if (provider === 'http') {
+    return [
+      FcmPushNotificationService,
+      {
+        provide: PushNotificationServiceToken,
+        useExisting: FcmPushNotificationService,
+      },
+      {
+        provide: GoogleJWTToken,
+        useFactory: (): JWT => {
+          return new JWT({
+            scopes: [FcmPushNotificationService.MESSAGING_SCOPE],
+          });
+        },
+      },
+    ];
+  }
+
+  // Default: SDK-based
+  return [
+    FcmSdkPushNotificationService,
+    {
+      provide: PushNotificationServiceToken,
+      useExisting: FcmSdkPushNotificationService,
+    },
     {
       provide: GoogleMessagingToken,
-      useFactory: () => {
+      useFactory: (): admin.messaging.Messaging => {
         admin.initializeApp({
-          credential: admin.credential.cert(serviceAccount as ServiceAccount),
+          credential: admin.credential.applicationDefault(),
         });
         return admin.messaging();
       },
     },
+  ];
+}
+
+const pushProvider: PushProvider =
+  (process.env.PUSH_NOTIFICATION_PROVIDER as PushProvider) || 'sdk';
+
+@Module({
+  providers: [
+    SendInBlueEmailService,
+    { provide: EmailServiceToken, useExisting: SendInBlueEmailService },
+    ...buildPushNotificationProviders(pushProvider),
     {
       inject: [EmailProviderOptions],
       provide: TransactionalEmailsApi,
-      useFactory: async (_emailProviderOptions: EmailProviderOptions) => {
+      useFactory: async (
+        emailProviderOptions: EmailProviderOptions,
+      ): Promise<TransactionalEmailsApi> => {
         const transactionalEmailsApi = new TransactionalEmailsApi();
         transactionalEmailsApi.setApiKey(
           TransactionalEmailsApiApiKeys.apiKey,
-          _emailProviderOptions.apiKey,
+          emailProviderOptions.apiKey,
         );
         return transactionalEmailsApi;
       },

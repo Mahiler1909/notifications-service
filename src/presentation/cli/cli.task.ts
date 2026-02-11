@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { CommandBus } from '@nestjs/cqrs';
 import { SendTransactionalEmailCommand } from '../../application/features/sendTransactionalEmail/send-transactional-email.command';
 import { TemplateNames } from '../../domain/email/enums/template-names.enum';
@@ -24,7 +25,7 @@ export class CliTask extends CommandRunner {
     description: 'Receiver email',
     required: true,
   })
-  parseEmail(val: string) {
+  parseEmail(val: string): string {
     return val;
   }
 
@@ -33,36 +34,47 @@ export class CliTask extends CommandRunner {
     description: 'Receiver name',
     required: true,
   })
-  parseName(val: string) {
+  parseName(val: string): string {
     return val;
   }
 
   @Option({
     flags: '-p, --params <params>',
-    description: 'Template parameters',
+    description: 'Template parameters (JSON string)',
     required: true,
   })
-  parseParameters(val: string) {
+  parseParameters(val: string): string {
     return val;
   }
 
   async run(inputs: string[], options: Record<string, any>): Promise<void> {
-    figlet.text('Notification Service', async (error: any, title: string) => {
-      console.log(title);
-      await this.sendEmail(options);
+    const title = await new Promise<string>((resolve, reject) => {
+      figlet.text('Notification Service', (error, result) => {
+        if (error) return reject(error);
+        resolve(result ?? '');
+      });
     });
+    console.log(title);
+    await this.sendEmail(options);
   }
 
-  private async sendEmail(options: Record<string, any>) {
+  private async sendEmail(options: Record<string, any>): Promise<void> {
     try {
       updateSpinnerText('Sending email');
-      const receivers = new Array<Receiver>(
-        new Receiver(options['email'], options['name']),
-      );
+
+      let params: Record<string, unknown>;
+      try {
+        params = JSON.parse(options['params']);
+      } catch {
+        spinnerError('Invalid JSON in --params');
+        return;
+      }
+
+      const receivers = [new Receiver(options['email'], options['name'])];
       await this._commandBus.execute(
         new SendTransactionalEmailCommand(
           TemplateNames.CUSTOMER_CHRISTMAS,
-          JSON.parse(options['params']),
+          params,
           receivers,
         ),
       );

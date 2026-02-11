@@ -1,36 +1,28 @@
 import { IPushNotificationService } from '../../domain/push-notifications/interfaces/push-notification-service.interface';
 import { PushNotification } from '../../domain/push-notifications/models/push-notification';
 import { JWT } from 'google-auth-library';
-import admin, { ServiceAccount } from 'firebase-admin';
-import * as serviceAccount from '../../../configuration/firebase-adminsdk.json';
-import { Inject, Injectable, Scope } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import axios from 'axios';
 import { PushNotificationOptions } from '../configuration/options/push-notification-options';
 
 export const GoogleJWTToken = Symbol('GoogleJWT');
 
-@Injectable({ scope: Scope.TRANSIENT })
+@Injectable()
 export class FcmPushNotificationService implements IPushNotificationService {
+  private readonly _logger = new Logger(FcmPushNotificationService.name);
   public static MESSAGING_SCOPE =
     'https://www.googleapis.com/auth/firebase.messaging';
+
   constructor(
     @Inject(GoogleJWTToken) private readonly _jwtClient: JWT,
     private readonly _pushNotificationOptions: PushNotificationOptions,
-  ) {
-    admin.initializeApp({
-      credential: admin.credential.cert(serviceAccount as ServiceAccount),
-    });
-  }
+  ) {}
 
   async sendPushNotification(
     pushNotification: PushNotification,
     deviceTokens: Array<string>,
   ): Promise<void> {
     const token = await this.generateBearerToken();
-    if (token instanceof Error) {
-      console.error('Error generating bearer token:', token);
-      return;
-    }
 
     for (const deviceToken of deviceTokens) {
       const fcmMessage = {
@@ -44,15 +36,13 @@ export class FcmPushNotificationService implements IPushNotificationService {
           android: {
             notification: {
               image: pushNotification.imageUrl,
-              // icon: 'notification_icon',
-              // color: '#304c7b',
             },
           },
         },
       };
 
       try {
-        const response = await axios({
+        await axios({
           method: 'post',
           url: `https://fcm.googleapis.com/v1/projects/${this._pushNotificationOptions.projectId}/messages:send`,
           headers: {
@@ -61,23 +51,20 @@ export class FcmPushNotificationService implements IPushNotificationService {
           },
           data: fcmMessage,
         });
-
-        console.log(response);
       } catch (e) {
-        console.log(e);
+        this._logger.error(
+          `Failed to send push notification to token ${deviceToken}`,
+          e instanceof Error ? e.stack : e,
+        );
       }
     }
   }
 
-  private generateBearerToken(): Promise<string | Error> {
-    return new Promise((resolve, reject) => {
-      this._jwtClient.authorize(function (err, tokens) {
-        if (err) {
-          reject(err);
-          return;
-        }
-        resolve(tokens.access_token);
-      });
-    });
+  private async generateBearerToken(): Promise<string> {
+    const tokens = await this._jwtClient.authorize();
+    if (!tokens.access_token) {
+      throw new Error('Failed to obtain access token');
+    }
+    return tokens.access_token;
   }
 }

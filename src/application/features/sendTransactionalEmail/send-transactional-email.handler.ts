@@ -21,7 +21,7 @@ export class SendTransactionalEmailHandler
       command.templateName,
     );
 
-    if (templateId == null) {
+    if (templateId === null) {
       throw new NotFoundException(
         `No existe el template: ${command.templateName}`,
       );

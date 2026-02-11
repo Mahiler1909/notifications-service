@@ -4,9 +4,5 @@ grpc:
   host: localhost
   port: 5000
 providers:
-  email:
-    apiKey: 'xxxx'
   push-notification:
     projectId: bloc-exercies
-
-

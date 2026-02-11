@@ -6,6 +6,14 @@ export class PushNotificationOptions {
   constructor(private _configService: ConfigService) {}
 
   get projectId(): string {
-    return this._configService.get('providers.push-notification.projectId');
+    const id = this._configService.get<string>(
+      'providers.push-notification.projectId',
+    );
+    if (!id) {
+      throw new Error(
+        'Missing push notification projectId configuration (providers.push-notification.projectId)',
+      );
+    }
+    return id;
   }
 }

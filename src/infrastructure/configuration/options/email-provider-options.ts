@@ -6,6 +6,12 @@ export class EmailProviderOptions {
   constructor(private _configService: ConfigService) {}
 
   get apiKey(): string {
-    return this._configService.get('providers.email.apiKey');
+    const key =
+      this._configService.get<string>('EMAIL_API_KEY') ??
+      this._configService.get<string>('providers.email.apiKey');
+    if (!key) {
+      throw new Error('Missing email API key configuration (EMAIL_API_KEY)');
+    }
+    return key;
   }
 }

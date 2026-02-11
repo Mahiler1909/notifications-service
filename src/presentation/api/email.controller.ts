@@ -3,9 +3,8 @@ import {
   Controller,
   HttpCode,
   HttpStatus,
-  InternalServerErrorException,
+  NotFoundException as HttpNotFoundException,
   Post,
-  ServiceUnavailableException,
 } from '@nestjs/common';
 import { CommandBus } from '@nestjs/cqrs';
 import { SendTransactionalEmailCommand } from '../../application/features/sendTransactionalEmail/send-transactional-email.command';
@@ -21,7 +20,7 @@ export class EmailController {
   @HttpCode(HttpStatus.NO_CONTENT)
   async sendCustomerChristmasEmail(
     @Body() transactionalEmailRequestDto: TransactionalEmailRequestDto,
-  ) {
+  ): Promise<void> {
     try {
       await this._commandBus.execute(
         new SendTransactionalEmailCommand(
@@ -32,9 +31,9 @@ export class EmailController {
       );
     } catch (exception) {
       if (exception instanceof NotFoundException) {
-        throw new ServiceUnavailableException();
+        throw new HttpNotFoundException(exception.message);
       }
-      throw new InternalServerErrorException();
+      throw exception;
     }
   }
 }

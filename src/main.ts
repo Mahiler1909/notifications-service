@@ -1,15 +1,29 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ConfigService } from '@nestjs/config';
-import { CommandFactory } from 'nest-commander';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
 import { join } from 'path';
-import { INestApplication } from '@nestjs/common';
+import { INestApplication, Logger, ValidationPipe } from '@nestjs/common';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
-async function bootstrap() {
+const logger = new Logger('Bootstrap');
+
+async function bootstrap(): Promise<void> {
   const app = await NestFactory.create(AppModule);
+  app.useGlobalPipes(
+    new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }),
+  );
+  app.enableShutdownHooks();
+
+  const swaggerConfig = new DocumentBuilder()
+    .setTitle('Notifications Service')
+    .setDescription('API for sending email and push notifications')
+    .setVersion('1.0')
+    .build();
+  const document = SwaggerModule.createDocument(app, swaggerConfig);
+  SwaggerModule.setup('api/docs', app, document);
+
   const configService = app.get(ConfigService);
-  // await initCli();
   await initHttpServer(app, configService);
   await initGrpcServer(app, configService);
 }
@@ -17,22 +31,18 @@ async function bootstrap() {
 async function initHttpServer(
   app: INestApplication,
   configService: ConfigService,
-) {
-  await app.listen(configService.get('http.port', 3000));
-}
-
-async function initCli() {
-  await CommandFactory.run(AppModule, {
-    logger: false,
-  });
+): Promise<void> {
+  const port = configService.get('http.port', 3000);
+  await app.listen(port);
+  logger.log(`HTTP server listening on port ${port}`);
 }
 
 async function initGrpcServer(
   app: INestApplication,
   configService: ConfigService,
-) {
+): Promise<void> {
   const grpcPort = configService.get('grpc.port', 5000);
-  const grpcHost = configService.get('grpc.host');
+  const grpcHost = configService.get('grpc.host', 'localhost');
   const microserviceOptions: MicroserviceOptions = {
     transport: Transport.GRPC,
     options: {
@@ -44,6 +54,10 @@ async function initGrpcServer(
 
   const microservice = app.connectMicroservice(microserviceOptions);
   await microservice.listen();
+  logger.log(`gRPC server listening on ${grpcHost}:${grpcPort}`);
 }
 
-bootstrap();
+bootstrap().catch((err) => {
+  logger.error('Failed to start application', err.stack);
+  process.exit(1);
+});

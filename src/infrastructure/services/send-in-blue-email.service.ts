@@ -1,13 +1,13 @@
 import { IEmailService } from '../../domain/email/interfaces/email-service.interface';
 import { Email } from '../../domain/email/models/email.model';
-import { Injectable, Scope } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import {
   SendSmtpEmail,
   SendSmtpEmailTo,
   TransactionalEmailsApi,
 } from '@sendinblue/client';
 
-@Injectable({ scope: Scope.TRANSIENT })
+@Injectable()
 export class SendInBlueEmailService implements IEmailService {
   constructor(
     private readonly _transactionalEmailApi: TransactionalEmailsApi,
@@ -15,8 +15,8 @@ export class SendInBlueEmailService implements IEmailService {
 
   async getTemplateIdByNameAsync(templateName: string): Promise<number | null> {
     const templates = await this._transactionalEmailApi.getSmtpTemplates();
-    const template = templates.body.templates.find(
-      (template) => template.name === templateName,
+    const template = templates.body.templates?.find(
+      (t) => t.name === templateName,
     );
 
     if (!template) {
@@ -31,7 +31,7 @@ export class SendInBlueEmailService implements IEmailService {
     const createdSmtpEmail = await this._transactionalEmailApi.sendTransacEmail(
       sendSmtpEmail,
     );
-    return createdSmtpEmail.body.messageId;
+    return createdSmtpEmail.body.messageId ?? '';
   }
 
   private generateSendSmtpEmail(email: Email): SendSmtpEmail {

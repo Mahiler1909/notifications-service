@@ -4,6 +4,6 @@ export class SendPushNotificationCommand {
     public readonly title: string,
     public readonly body: string,
     public readonly imageUrl: string | null,
-    public readonly payload: Record<string, unknown>,
+    public readonly payload: Record<string, string>,
   ) {}
 }

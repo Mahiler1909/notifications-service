@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Test, TestingModule } from '@nestjs/testing';
 import { SendInBlueEmailService } from '../../../src/infrastructure/services/send-in-blue-email.service';
 import { EmailServiceToken } from '../../../src/domain/email/interfaces/email-service.interface';
@@ -55,7 +56,7 @@ describe('SendInBlueEmailService', () => {
     );
 
     transactionalEmailsApiExecute.mockResolvedValue({
-      response: undefined,
+      response: undefined as any,
       body: getSmtpTemplates,
     });
 
@@ -82,7 +83,7 @@ describe('SendInBlueEmailService', () => {
       'getSmtpTemplates',
     );
     transactionalEmailsApiExecute.mockResolvedValue({
-      response: undefined,
+      response: undefined as any,
       body: getSmtpTemplates,
     });
 
@@ -109,7 +110,7 @@ describe('SendInBlueEmailService', () => {
       'sendTransacEmail',
     );
     transactionalEmailsApiExecute.mockResolvedValue({
-      response: undefined,
+      response: undefined as any,
       body: createSmtpTemplate,
     });
 

@@ -1,13 +1,15 @@
 import { IPushNotificationService } from '../../domain/push-notifications/interfaces/push-notification-service.interface';
 import { PushNotification } from '../../domain/push-notifications/models/push-notification';
-import { Inject, Injectable, Scope } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import type { Messaging } from 'firebase-admin/lib/messaging';
 import { MulticastMessage } from 'firebase-admin/lib/messaging/messaging-api';
 
 export const GoogleMessagingToken = Symbol('GoogleMessaging');
 
-@Injectable({ scope: Scope.TRANSIENT })
+@Injectable()
 export class FcmSdkPushNotificationService implements IPushNotificationService {
+  private readonly _logger = new Logger(FcmSdkPushNotificationService.name);
+
   constructor(
     @Inject(GoogleMessagingToken) private readonly _googleMessaging: Messaging,
   ) {}
@@ -21,9 +23,9 @@ export class FcmSdkPushNotificationService implements IPushNotificationService {
       notification: {
         title: pushNotification.title,
         body: pushNotification.body,
-        imageUrl: pushNotification.imageUrl,
+        imageUrl: pushNotification.imageUrl ?? undefined,
       },
-      data: pushNotification.payload as { [p: string]: string },
+      data: pushNotification.payload,
     };
 
     const batchResponse = await this._googleMessaging.sendEachForMulticast(
@@ -31,13 +33,16 @@ export class FcmSdkPushNotificationService implements IPushNotificationService {
     );
 
     if (batchResponse.failureCount > 0) {
-      const failedTokens = Array<string>();
+      const failedTokens: string[] = [];
       batchResponse.responses.forEach((resp, idx) => {
         if (!resp.success) {
           failedTokens.push(deviceTokens[idx]);
         }
       });
-      console.log('List of tokens that caused failures: ' + failedTokens);
+      this._logger.warn(
+        `Push notification failures: ${batchResponse.failureCount}/${deviceTokens.length} tokens failed`,
+        { failedTokens },
+      );
     }
   }
 }
