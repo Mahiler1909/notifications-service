@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { CommandBus } from '@nestjs/cqrs';
 import { SendTransactionalEmailCommand } from '../../application/features/sendTransactionalEmail/send-transactional-email.command';
-import { TemplateNames } from '../../domain/email/enums/template-names.enum';
 import { Receiver } from '../../domain/email/models/receiver.model';
 import { Command, CommandRunner, Option } from 'nest-commander';
 import * as figlet from 'figlet';
@@ -12,12 +11,21 @@ import {
 } from './helpers/spinner.helper';
 
 @Command({
-  name: 'send-customer-christmas-email',
+  name: 'send-email',
   options: { isDefault: false },
 })
 export class CliTask extends CommandRunner {
   constructor(private readonly _commandBus: CommandBus) {
     super();
+  }
+
+  @Option({
+    flags: '-t, --template <template>',
+    description: 'Template name',
+    required: true,
+  })
+  parseTemplate(val: string): string {
+    return val;
   }
 
   @Option({
@@ -73,7 +81,7 @@ export class CliTask extends CommandRunner {
       const receivers = [new Receiver(options['email'], options['name'])];
       await this._commandBus.execute(
         new SendTransactionalEmailCommand(
-          TemplateNames.CUSTOMER_CHRISTMAS,
+          options['template'],
           params,
           receivers,
         ),

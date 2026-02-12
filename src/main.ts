@@ -48,7 +48,7 @@ async function initGrpcServer(
     options: {
       url: `${grpcHost}:${grpcPort}`,
       package: 'email',
-      protoPath: join(__dirname, '../../email', 'email.proto'),
+      protoPath: join(__dirname, '../email', 'email.proto'),
     },
   };
 

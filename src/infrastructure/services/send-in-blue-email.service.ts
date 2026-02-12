@@ -45,7 +45,10 @@ export class SendInBlueEmailService implements IEmailService {
     });
 
     sendSmtpEmail.templateId = email.templateId;
-    sendSmtpEmail.params = email.parameters;
+
+    if (email.parameters && Object.keys(email.parameters).length > 0) {
+      sendSmtpEmail.params = email.parameters;
+    }
 
     return sendSmtpEmail;
   }

@@ -3,7 +3,6 @@ import { EmailController } from '../../src/presentation/api/email.controller';
 import { CommandBus, CqrsModule } from '@nestjs/cqrs';
 import { TransactionalEmailRequestDto } from '../../src/presentation/api/dto/transactional-email-request.dto';
 import { NotFoundException } from '../../src/application/shared/exceptions/not-found.exception';
-import { TemplateNames } from '../../src/domain/email/enums/template-names.enum';
 import { NotFoundException as HttpNotFoundException } from '@nestjs/common';
 import { Receiver } from '../../src/domain/email/models/receiver.model';
 
@@ -11,7 +10,10 @@ describe('EmailController', () => {
   let sut: EmailController;
   let commandBus: CommandBus;
 
+  const templateName = 'tp-customer-welcome';
+
   const transactionalEmailRequestDto = new TransactionalEmailRequestDto();
+  transactionalEmailRequestDto.templateName = templateName;
   transactionalEmailRequestDto.parameters = { NAME: 'Name' };
   transactionalEmailRequestDto.receivers = [
     new Receiver('name@domain.co', 'Name'),
@@ -31,19 +33,19 @@ describe('EmailController', () => {
     expect(sut).toBeDefined();
   });
 
-  it('should not throw when sendCustomerChristmasEmail succeeds', async () => {
+  it('should not throw when sendTransactionalEmail succeeds', async () => {
     // Arrange
     const commandBusExecute = jest.spyOn(commandBus, 'execute');
     commandBusExecute.mockResolvedValue(undefined);
 
     // Act & Assert
     await expect(
-      sut.sendCustomerChristmasEmail(transactionalEmailRequestDto),
+      sut.sendTransactionalEmail(transactionalEmailRequestDto),
     ).resolves.toBeUndefined();
     expect(commandBusExecute).toHaveBeenCalledWith({
       parameters: transactionalEmailRequestDto.parameters,
       receivers: transactionalEmailRequestDto.receivers,
-      templateName: TemplateNames.CUSTOMER_CHRISTMAS,
+      templateName,
     });
   });
 
@@ -52,13 +54,13 @@ describe('EmailController', () => {
     const commandBusExecute = jest.spyOn(commandBus, 'execute');
     commandBusExecute.mockRejectedValue(
       new NotFoundException(
-        `No existe el template: ${TemplateNames.CUSTOMER_CHRISTMAS}`,
+        `No existe el template: ${templateName}`,
       ),
     );
 
     // Act
     const currentResult = async (): Promise<void> => {
-      await sut.sendCustomerChristmasEmail(transactionalEmailRequestDto);
+      await sut.sendTransactionalEmail(transactionalEmailRequestDto);
     };
 
     // Assert
@@ -74,7 +76,7 @@ describe('EmailController', () => {
 
     // Act
     const currentResult = async (): Promise<void> => {
-      await sut.sendCustomerChristmasEmail(transactionalEmailRequestDto);
+      await sut.sendTransactionalEmail(transactionalEmailRequestDto);
     };
 
     // Assert
