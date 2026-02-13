@@ -72,7 +72,7 @@ async function initHttpServer(
   app: INestApplication,
   configService: ConfigService,
 ): Promise<void> {
-  const port = configService.get('http.port', 3000);
+  const port = configService.get<number>('http.port', 3000);
   await app.listen(port);
   logger.log(`HTTP server listening on port ${port}`);
 }
@@ -81,8 +81,8 @@ async function initGrpcServer(
   app: INestApplication,
   configService: ConfigService,
 ): Promise<void> {
-  const grpcPort = configService.get('grpc.port', 5000);
-  const grpcHost = configService.get('grpc.host', 'localhost');
+  const grpcPort = configService.get<number>('grpc.port', 5000);
+  const grpcHost = configService.get<string>('grpc.host', '0.0.0.0');
   const microserviceOptions: MicroserviceOptions = {
     transport: Transport.GRPC,
     options: {

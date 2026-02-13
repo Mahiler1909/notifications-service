@@ -4,11 +4,13 @@ services:
     runtime: docker
     dockerfilePath: ./Dockerfile
     envVars:
-      - key: NODE_ENV
-        value: prod
+      - key: PORT
+        value: "3000"
       - key: MCP_TRANSPORT
         value: http
       - key: EMAIL_API_KEY
+        sync: false
+      - key: FIREBASE_PROJECT_ID
         sync: false
       - key: GOOGLE_APPLICATION_CREDENTIALS_JSON
         sync: false

@@ -1,8 +1,0 @@
-http:
-  port: 3030
-grpc:
-  host: localhost
-  port: 5000
-providers:
-  push-notification:
-    projectId: bloc-exercies

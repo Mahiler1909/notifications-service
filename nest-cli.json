@@ -3,7 +3,7 @@
   "collection": "@nestjs/schematics",
   "sourceRoot": "src",
   "compilerOptions": {
-    "assets": [{"include": "../configuration/*.yaml", "outDir": "./dist/configuration"}, {"include": "../email/*.proto", "outDir": "./dist/email"}],
+    "assets": [{"include": "../email/*.proto", "outDir": "./dist/email"}],
     "watchAssets": true
   }
 }
