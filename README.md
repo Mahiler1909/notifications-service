@@ -24,6 +24,8 @@
 - **Email** — Transactional emails via Brevo (SendInBlue) with dynamic templates
 - **Push Notifications** — Multicast via Firebase Cloud Messaging (Admin SDK or HTTP v1)
 - **MCP Server** — LLMs like Claude can send notifications as tools via stdio or Streamable HTTP
+- **Docker** — Multi-stage Dockerfile + docker-compose for local development
+- **Render Deployment** — Ready to deploy with `render.yaml` blueprint
 - **Swagger** — Auto-generated API docs at `/api/docs`
 - **Health Check** — `GET /health` via `@nestjs/terminus`
 - **Validation** — DTOs enforced with `class-validator`, domain models with self-validation
@@ -34,7 +36,7 @@
 
 ### Prerequisites
 
-- Node.js 18+
+- Node.js 20+
 - Yarn
 
 ### Installation
@@ -53,7 +55,6 @@ cp .env.example .env
 |----------|-------------|----------|
 | `EMAIL_API_KEY` | Brevo (SendInBlue) API key | Yes |
 | `GOOGLE_APPLICATION_CREDENTIALS` | Path to Firebase service account JSON | Yes |
-| `GOOGLE_APPLICATION_CREDENTIALS_JSON` | Firebase JSON inline (cloud deploy alternative) | No |
 | `FIREBASE_PROJECT_ID` | Firebase project ID | Yes |
 | `PUSH_NOTIFICATION_PROVIDER` | `sdk` (Admin SDK) or `http` (FCM HTTP v1) | No (default: `sdk`) |
 | `PORT` | HTTP server port | No (default: `3000`) |
@@ -219,6 +220,45 @@ Port (HTTP/gRPC/CLI/MCP)
 
 ---
 
+## Docker
+
+### Build & Run
+
+```bash
+docker build -t notifications-service .
+docker run -p 3000:3000 \
+  -e EMAIL_API_KEY=... \
+  -e FIREBASE_PROJECT_ID=... \
+  -e GOOGLE_APPLICATION_CREDENTIALS=/path/to/credentials.json \
+  notifications-service
+```
+
+### Docker Compose
+
+```bash
+docker-compose up
+```
+
+Runs two services:
+- **app** — HTTP API (3000) + gRPC (5000) + MCP at `/mcp`
+- **mcp** — Standalone MCP HTTP server (3001)
+
+---
+
+## Deployment (Render)
+
+The project includes a `render.yaml` blueprint for one-click deployment:
+
+1. Push the repo to GitHub
+2. In Render: **New > Blueprint** > select the repo
+3. Configure environment variables: `EMAIL_API_KEY`, `FIREBASE_PROJECT_ID`
+4. Upload Firebase credentials via **Secret Files** as `firebase-adminsdk.json`
+5. The env var `GOOGLE_APPLICATION_CREDENTIALS=/etc/secrets/firebase-adminsdk.json` is pre-configured
+
+Render exposes the HTTP API + MCP on a single port. gRPC is available only in Docker (local).
+
+---
+
 ## Testing
 
 ```bash
@@ -247,6 +287,8 @@ Tests live in `test/` with mocks in `test/mocks/`.
 | Config | @nestjs/config + env vars |
 | API Docs | @nestjs/swagger |
 | Health | @nestjs/terminus |
+| Container | Docker + docker-compose |
+| Hosting | Render |
 
 ---
 
@@ -266,16 +308,6 @@ Tests live in `test/` with mocks in `test/mocks/`.
 
 ---
 
-## Docker
+## License
 
-```bash
-docker build -t notifications-service .
-docker run -p 3000:3000 -e EMAIL_API_KEY=... -e FIREBASE_PROJECT_ID=... notifications-service
-```
-
-Or with docker-compose:
-
-```bash
-docker-compose up
-```
-
+[MIT](LICENSE)
