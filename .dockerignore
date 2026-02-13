@@ -1,0 +1,15 @@
+node_modules
+dist
+coverage
+.git
+.gitignore
+.env
+.env.*
+!.env.example
+*.md
+LICENSE
+.mcp.json
+.eslintrc.js
+.prettierrc
+.vscode
+.idea

@@ -63,11 +63,9 @@ describe('SendTransactionalEmailHandler', () => {
     (emailService.getTemplateIdByNameAsync as jest.Mock).mockResolvedValue(
       null,
     );
-    const command = new SendTransactionalEmailCommand(
-      'non-existent',
-      {},
-      [new Receiver('test@example.com', 'Test')],
-    );
+    const command = new SendTransactionalEmailCommand('non-existent', {}, [
+      new Receiver('test@example.com', 'Test'),
+    ]);
 
     // Act & Assert
     await expect(handler.execute(command)).rejects.toThrow(NotFoundException);

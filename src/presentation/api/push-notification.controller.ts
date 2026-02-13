@@ -12,7 +12,10 @@ export class PushNotificationController {
   @Post('send')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Send push notification to devices' })
-  @ApiResponse({ status: 204, description: 'Push notification sent successfully' })
+  @ApiResponse({
+    status: 204,
+    description: 'Push notification sent successfully',
+  })
   async sendPushNotification(
     @Body() pushNotificationRequestDto: PushNotificationRequestDto,
   ): Promise<void> {
