@@ -2,7 +2,11 @@
   "mcpServers": {
     "notifications-stdio": {
       "command": "npx",
-      "args": ["ts-node", "--transpile-only", "src/mcp-bootstrap.ts"],
+      "args": [
+        "ts-node",
+        "--transpile-only",
+        "src/mcp-bootstrap.ts"
+      ],
       "cwd": "/path/to/notifications-service",
       "env": {
         "NODE_ENV": "dev"
@@ -10,7 +14,7 @@
     },
     "notifications-http": {
       "type": "http",
-      "url": "http://localhost:3001/mcp"
+      "url": "https://notifications-service-lxur.onrender.com/mcp"
     }
   }
 }

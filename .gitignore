@@ -36,6 +36,9 @@ lerna-debug.log*
 
 configuration/*.json
 
+# Firebase credentials
+*-adminsdk*.json
+
 # Environment variables
 .env
 .env.local

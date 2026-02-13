@@ -86,7 +86,7 @@ async function initGrpcServer(
   configService: ConfigService,
 ): Promise<void> {
   const grpcPort = configService.get<number>('grpc.port', 5000);
-  const grpcHost = configService.get<string>('grpc.host', '0.0.0.0');
+  const grpcHost = configService.get<string>('grpc.host', 'localhost');
   const microserviceOptions: MicroserviceOptions = {
     transport: Transport.GRPC,
     options: {
