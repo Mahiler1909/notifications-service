@@ -5,6 +5,7 @@ import { InfrastructureModule } from './infrastructure/infrastructure.module';
 import { ConfigurationModule } from './infrastructure/configuration/configuration.module';
 import { CliModule } from './presentation/cli/cli.module';
 import { GrpcModule } from './presentation/grpc/grpc.module';
+import { McpModule } from './presentation/mcp/mcp.module';
 
 @Module({
   imports: [
@@ -14,6 +15,7 @@ import { GrpcModule } from './presentation/grpc/grpc.module';
     InfrastructureModule,
     ConfigurationModule,
     GrpcModule,
+    McpModule,
   ],
 })
 export class AppModule {}

@@ -53,9 +53,7 @@ describe('EmailController', () => {
     // Arrange
     const commandBusExecute = jest.spyOn(commandBus, 'execute');
     commandBusExecute.mockRejectedValue(
-      new NotFoundException(
-        `No existe el template: ${templateName}`,
-      ),
+      new NotFoundException(`No existe el template: ${templateName}`),
     );
 
     // Act
