@@ -19,7 +19,11 @@ async function bootstrap(): Promise<void> {
 
   const swaggerConfig = new DocumentBuilder()
     .setTitle('Notifications Service')
-    .setDescription('API for sending email and push notifications')
+    .setDescription(
+      'API for sending email and push notifications.\n\n' +
+        '**MCP (Model Context Protocol):** This service also exposes an MCP endpoint at `POST /mcp` ' +
+        'for AI agents (e.g. Claude). Use Streamable HTTP transport to connect.',
+    )
     .setVersion('1.0')
     .build();
   const document = SwaggerModule.createDocument(app, swaggerConfig);

@@ -2,6 +2,8 @@
 
 > A multi-port notification service built with **NestJS**, **Clean Architecture**, and **CQRS**. Send emails and push notifications through **4 interfaces**: HTTP API, gRPC, CLI, and MCP (Model Context Protocol).
 
+**[Live Demo (Swagger)](https://notifications-service-lxur.onrender.com/api/docs)**
+
 ```
          HTTP API ──┐
            gRPC ────┤
@@ -51,9 +53,13 @@ cp .env.example .env
 |----------|-------------|----------|
 | `EMAIL_API_KEY` | Brevo (SendInBlue) API key | Yes |
 | `GOOGLE_APPLICATION_CREDENTIALS` | Path to Firebase service account JSON | Yes |
+| `GOOGLE_APPLICATION_CREDENTIALS_JSON` | Firebase JSON inline (cloud deploy alternative) | No |
+| `FIREBASE_PROJECT_ID` | Firebase project ID | Yes |
 | `PUSH_NOTIFICATION_PROVIDER` | `sdk` (Admin SDK) or `http` (FCM HTTP v1) | No (default: `sdk`) |
-
-YAML config files live in `configuration/config.{NODE_ENV}.yaml` for ports and non-sensitive settings.
+| `PORT` | HTTP server port | No (default: `3000`) |
+| `GRPC_HOST` | gRPC bind host | No (default: `0.0.0.0`) |
+| `GRPC_PORT` | gRPC server port | No (default: `5000`) |
+| `MCP_TRANSPORT` | `stdio` or `http` | No (default: `stdio`) |
 
 ### Run
 
@@ -64,10 +70,10 @@ yarn start:mcp     # MCP server (stdio)
 
 | Service | URL |
 |---------|-----|
-| HTTP API | `http://localhost:3030` |
+| HTTP API | `http://localhost:3000` |
 | gRPC | `localhost:5000` |
-| Swagger Docs | `http://localhost:3030/api/docs` |
-| Health Check | `http://localhost:3030/health` |
+| Swagger Docs | `http://localhost:3000/api/docs` |
+| Health Check | `http://localhost:3000/health` |
 
 ---
 
@@ -76,7 +82,7 @@ yarn start:mcp     # MCP server (stdio)
 ### Send Email — HTTP
 
 ```bash
-curl -X POST http://localhost:3030/email/send \
+curl -X POST http://localhost:3000/email/send \
   -H "Content-Type: application/json" \
   -d '{
     "templateName": "Template Test",
@@ -88,7 +94,7 @@ curl -X POST http://localhost:3030/email/send \
 ### Send Push Notification — HTTP
 
 ```bash
-curl -X POST http://localhost:3030/push-notification/send \
+curl -X POST http://localhost:3000/push-notification/send \
   -H "Content-Type: application/json" \
   -d '{
     "deviceTokens": ["fcm-token-abc123"],
@@ -136,32 +142,31 @@ Add to your project's `.mcp.json`:
 ```json
 {
   "mcpServers": {
-    "notifications": {
+    "notifications-stdio": {
       "command": "npx",
       "args": ["ts-node", "--transpile-only", "src/mcp-bootstrap.ts"],
-      "cwd": "/path/to/notifications-service",
-      "env": {
-        "NODE_ENV": "dev",
-        "EMAIL_API_KEY": "your-brevo-api-key",
-        "GOOGLE_APPLICATION_CREDENTIALS": "/path/to/firebase-adminsdk.json"
-      }
+      "cwd": "/path/to/notifications-service"
     }
   }
 }
 ```
 
-### Production Setup (Streamable HTTP)
+### Remote / Production (Streamable HTTP)
 
-```bash
-yarn start:mcp:http   # Starts on http://localhost:3001/mcp
+When deployed (or running locally with `yarn start:mcp:http`), connect via HTTP:
+
+```json
+{
+  "mcpServers": {
+    "notifications-http": {
+      "type": "http",
+      "url": "https://your-deployment-url.com/mcp"
+    }
+  }
+}
 ```
 
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `MCP_TRANSPORT` | `stdio` or `http` | `stdio` |
-| `MCP_PORT` | HTTP port (only for http transport) | `3001` |
-
-The HTTP endpoint (`POST /mcp`) implements the MCP Streamable HTTP spec in stateless JSON mode — no sessions, easy to scale horizontally. Put a reverse proxy (nginx, Caddy, ALB) in front for HTTPS.
+When `MCP_TRANSPORT=http` is set, the MCP endpoint is also mounted on the main NestJS app at `POST /mcp` (same port as the HTTP API). The endpoint implements the MCP Streamable HTTP spec in stateless JSON mode — no sessions, easy to scale.
 
 ### Available Tools
 
@@ -180,7 +185,7 @@ src/
 │   ├── api/               #   HTTP REST controllers + DTOs
 │   ├── grpc/              #   gRPC controller
 │   ├── cli/               #   CLI command runner (nest-commander)
-│   └── mcp/               #   MCP server (stdio)
+│   └── mcp/               #   MCP tools + service
 ├── application/           # CQRS commands + handlers
 │   └── features/
 │       ├── sendTransactionalEmail/
@@ -190,7 +195,7 @@ src/
 │   └── push-notifications/
 └── infrastructure/        # External service implementations
     ├── services/          #   Brevo, Firebase
-    └── configuration/     #   YAML config, options classes
+    └── configuration/     #   Env var config, options classes
 ```
 
 ### Data Flow
@@ -231,7 +236,7 @@ Tests live in `test/` with mocks in `test/mocks/`.
 | Layer | Technology |
 |-------|-----------|
 | Framework | NestJS 9 |
-| Language | TypeScript 4.7 |
+| Language | TypeScript 5.3 |
 | CQRS | @nestjs/cqrs |
 | Email Provider | Brevo (SendInBlue) |
 | Push Notifications | Firebase Admin SDK |
@@ -239,7 +244,7 @@ Tests live in `test/` with mocks in `test/mocks/`.
 | CLI | nest-commander |
 | MCP | @modelcontextprotocol/sdk |
 | Validation | class-validator + Zod (MCP) |
-| Config | @nestjs/config + YAML |
+| Config | @nestjs/config + env vars |
 | API Docs | @nestjs/swagger |
 | Health | @nestjs/terminus |
 
@@ -250,10 +255,27 @@ Tests live in `test/` with mocks in `test/mocks/`.
 | Command | Description |
 |---------|-------------|
 | `yarn start:dev` | Dev mode with watch (HTTP + gRPC) |
-| `yarn start:mcp` | MCP server via stdio |
-| `yarn start:mcp:http` | MCP server via HTTP (production) |
+| `yarn start:prod` | Production (HTTP + gRPC) |
+| `yarn start:prod:mcp` | Production (HTTP + gRPC + MCP) |
+| `yarn start:mcp` | MCP server via stdio (standalone) |
+| `yarn start:mcp:http` | MCP server via HTTP (standalone) |
 | `yarn build` | Compile TypeScript |
 | `yarn test` | Run unit tests |
 | `yarn test:cov` | Tests with coverage |
 | `yarn lint` | ESLint with auto-fix |
+
+---
+
+## Docker
+
+```bash
+docker build -t notifications-service .
+docker run -p 3000:3000 -e EMAIL_API_KEY=... -e FIREBASE_PROJECT_ID=... notifications-service
+```
+
+Or with docker-compose:
+
+```bash
+docker-compose up
+```
 
