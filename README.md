@@ -1,5 +1,11 @@
 # Notifications Service
 
+[![Build](https://img.shields.io/github/actions/workflow/status/Mahiler1909/notifications-service/ci.yml?branch=main&logo=github)](https://github.com/Mahiler1909/notifications-service/actions/workflows/ci.yml)
+[![Coverage](https://img.shields.io/codecov/c/github/Mahiler1909/notifications-service?logo=codecov)](https://codecov.io/gh/Mahiler1909/notifications-service)
+[![Release](https://img.shields.io/github/v/release/Mahiler1909/notifications-service?logo=github)](https://github.com/Mahiler1909/notifications-service/releases)
+[![Node](https://img.shields.io/badge/node-20-339933?logo=node.js&logoColor=white)](https://nodejs.org/)
+[![License](https://img.shields.io/github/license/Mahiler1909/notifications-service)](LICENSE)
+
 > A multi-port notification service built with **NestJS**, **Clean Architecture**, and **CQRS**. Send emails and push notifications through **4 interfaces**: HTTP API, gRPC, CLI, and MCP (Model Context Protocol).
 
 **[Live Demo (Swagger)](https://notifications-service-lxur.onrender.com/api/docs)**

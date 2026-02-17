@@ -22,4 +22,9 @@ jobs:
 
       - run: yarn build
 
-      - run: yarn test
+      - run: yarn test:cov
+
+      - uses: codecov/codecov-action@v4
+        with:
+          files: ./coverage/lcov.info
+          token: ${{ secrets.CODECOV_TOKEN }}
