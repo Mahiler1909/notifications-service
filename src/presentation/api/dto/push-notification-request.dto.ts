@@ -5,11 +5,13 @@ import {
   IsOptional,
   IsString,
   IsUrl,
+  IsEnum,
   ValidateNested,
   ArrayMinSize,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { NotificationType } from '../../../domain/push-notifications/enums/notification-type.enum';
 
 class NotificationDto {
   @ApiProperty({ example: 'New promotion!' })
@@ -32,11 +34,32 @@ class NotificationDto {
 
   @ApiPropertyOptional({
     example: { orderId: '123', screen: 'promo' },
-    description: 'Custom data payload sent to the device',
+    description:
+      'Custom data payload sent to the device. ' +
+      'Include rich notification metadata here: bigText, inboxLines, chatMessages, actions, conversationTitle, etc.',
   })
   @IsOptional()
   @IsObject()
   public payload: Record<string, string>;
+
+  @ApiPropertyOptional({
+    enum: NotificationType,
+    example: NotificationType.STANDARD,
+    description:
+      'Notification display style: standard, bigText, bigPicture, inbox, messaging',
+  })
+  @IsOptional()
+  @IsEnum(NotificationType)
+  public notificationType?: NotificationType;
+
+  @ApiPropertyOptional({
+    example: 'alert_urgent',
+    description:
+      'Custom sound name (without extension). Available: alert_urgent, chat_sound, reminder, success',
+  })
+  @IsOptional()
+  @IsString()
+  public customSound?: string;
 }
 
 export class PushNotificationRequestDto {

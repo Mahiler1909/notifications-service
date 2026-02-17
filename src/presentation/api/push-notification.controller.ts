@@ -26,6 +26,8 @@ export class PushNotificationController {
         pushNotificationRequestDto.notification.body,
         pushNotificationRequestDto.notification.imageUrl,
         pushNotificationRequestDto.notification.payload,
+        pushNotificationRequestDto.notification.notificationType,
+        pushNotificationRequestDto.notification.customSound,
       ),
     );
   }

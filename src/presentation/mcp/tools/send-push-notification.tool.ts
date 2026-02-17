@@ -1,5 +1,6 @@
 import { CommandBus } from '@nestjs/cqrs';
 import { SendPushNotificationCommand } from '../../../application/features/sendPushNotification/send-push-notification.command';
+import { NotificationType } from '../../../domain/push-notifications/enums/notification-type.enum';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 
 export async function registerSendPushNotificationTool(
@@ -19,7 +20,9 @@ export async function registerSendPushNotificationTool(
         '  - title (string): Notification title\n' +
         '  - body (string): Notification body text\n' +
         '  - image_url (string, optional): URL of an image to display\n' +
-        '  - payload (object, optional): Custom key-value data sent to the device\n\n' +
+        '  - payload (object, optional): Custom key-value data sent to the device\n' +
+        '  - notification_type (string, optional): Display style (standard, bigText, bigPicture, inbox, messaging)\n' +
+        '  - custom_sound (string, optional): Custom sound name (alert_urgent, chat_sound, reminder, success)\n\n' +
         'Returns: Success or error message.',
       inputSchema: {
         device_tokens: z
@@ -42,6 +45,18 @@ export async function registerSendPushNotificationTool(
           .record(z.string(), z.string())
           .optional()
           .describe('Custom data payload sent to the device'),
+        notification_type: z
+          .enum(['standard', 'bigText', 'bigPicture', 'inbox', 'messaging'])
+          .optional()
+          .describe(
+            'Notification display style on Android: standard, bigText, bigPicture, inbox, messaging',
+          ),
+        custom_sound: z
+          .string()
+          .optional()
+          .describe(
+            'Custom sound name (alert_urgent, chat_sound, reminder, success)',
+          ),
       },
       annotations: {
         readOnlyHint: false,
@@ -56,6 +71,8 @@ export async function registerSendPushNotificationTool(
       body: string;
       image_url?: string;
       payload?: Record<string, string>;
+      notification_type?: string;
+      custom_sound?: string;
     }) => {
       try {
         await commandBus.execute(
@@ -65,6 +82,9 @@ export async function registerSendPushNotificationTool(
             params.body,
             params.image_url ?? null,
             params.payload ?? {},
+            (params.notification_type as NotificationType) ??
+              NotificationType.STANDARD,
+            params.custom_sound ?? null,
           ),
         );
         return {

@@ -1,5 +1,6 @@
 import { IPushNotificationService } from '../../domain/push-notifications/interfaces/push-notification-service.interface';
 import { PushNotification } from '../../domain/push-notifications/models/push-notification';
+import { NotificationType } from '../../domain/push-notifications/enums/notification-type.enum';
 import { JWT } from 'google-auth-library';
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import axios from 'axios';
@@ -24,19 +25,31 @@ export class FcmPushNotificationService implements IPushNotificationService {
   ): Promise<void> {
     const token = await this.generateBearerToken();
 
+    const data: Record<string, string> = {
+      title: pushNotification.title,
+      body: pushNotification.body,
+      ...pushNotification.payload,
+    };
+
+    if (pushNotification.imageUrl) {
+      data.imageUrl = pushNotification.imageUrl;
+    }
+
+    if (pushNotification.notificationType !== NotificationType.STANDARD) {
+      data.notificationType = pushNotification.notificationType;
+    }
+
+    if (pushNotification.customSound) {
+      data.customSound = pushNotification.customSound;
+    }
+
     for (const deviceToken of deviceTokens) {
       const fcmMessage = {
         message: {
           token: deviceToken,
-          data: pushNotification.payload,
-          notification: {
-            title: pushNotification.title,
-            body: pushNotification.body,
-          },
+          data,
           android: {
-            notification: {
-              image: pushNotification.imageUrl,
-            },
+            priority: 'high',
           },
         },
       };

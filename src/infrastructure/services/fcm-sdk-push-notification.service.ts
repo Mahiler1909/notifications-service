@@ -1,5 +1,6 @@
 import { IPushNotificationService } from '../../domain/push-notifications/interfaces/push-notification-service.interface';
 import { PushNotification } from '../../domain/push-notifications/models/push-notification';
+import { NotificationType } from '../../domain/push-notifications/enums/notification-type.enum';
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import type { Messaging } from 'firebase-admin/lib/messaging';
 import { MulticastMessage } from 'firebase-admin/lib/messaging/messaging-api';
@@ -18,14 +19,30 @@ export class FcmSdkPushNotificationService implements IPushNotificationService {
     pushNotification: PushNotification,
     deviceTokens: Array<string>,
   ): Promise<void> {
+    const data: Record<string, string> = {
+      title: pushNotification.title,
+      body: pushNotification.body,
+      ...pushNotification.payload,
+    };
+
+    if (pushNotification.imageUrl) {
+      data.imageUrl = pushNotification.imageUrl;
+    }
+
+    if (pushNotification.notificationType !== NotificationType.STANDARD) {
+      data.notificationType = pushNotification.notificationType;
+    }
+
+    if (pushNotification.customSound) {
+      data.customSound = pushNotification.customSound;
+    }
+
     const multicastMessage: MulticastMessage = {
       tokens: deviceTokens,
-      notification: {
-        title: pushNotification.title,
-        body: pushNotification.body,
-        imageUrl: pushNotification.imageUrl ?? undefined,
+      data,
+      android: {
+        priority: 'high',
       },
-      data: pushNotification.payload,
     };
 
     const batchResponse = await this._googleMessaging.sendEachForMulticast(

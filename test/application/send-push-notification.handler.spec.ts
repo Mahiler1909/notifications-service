@@ -6,6 +6,7 @@ import {
   PushNotificationServiceToken,
 } from '../../src/domain/push-notifications/interfaces/push-notification-service.interface';
 import { PushNotification } from '../../src/domain/push-notifications/models/push-notification';
+import { NotificationType } from '../../src/domain/push-notifications/enums/notification-type.enum';
 
 describe('SendPushNotificationHandler', () => {
   let handler: SendPushNotificationHandler;
@@ -76,6 +77,35 @@ describe('SendPushNotificationHandler', () => {
     // Assert
     expect(pushNotificationService.sendPushNotification).toHaveBeenCalledWith(
       new PushNotification('Title', 'Body', null, {}),
+      ['token-1'],
+    );
+  });
+
+  it('should pass notificationType and customSound to domain model', async () => {
+    // Arrange
+    const command = new SendPushNotificationCommand(
+      ['token-1'],
+      'Title',
+      'Body',
+      null,
+      { bigText: 'Long text content...' },
+      NotificationType.BIG_TEXT,
+      'alert_urgent',
+    );
+
+    // Act
+    await handler.execute(command);
+
+    // Assert
+    expect(pushNotificationService.sendPushNotification).toHaveBeenCalledWith(
+      new PushNotification(
+        'Title',
+        'Body',
+        null,
+        { bigText: 'Long text content...' },
+        NotificationType.BIG_TEXT,
+        'alert_urgent',
+      ),
       ['token-1'],
     );
   });

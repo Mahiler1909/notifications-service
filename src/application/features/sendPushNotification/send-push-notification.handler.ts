@@ -22,6 +22,8 @@ export class SendPushNotificationHandler
       command.body,
       command.imageUrl,
       command.payload,
+      command.notificationType,
+      command.customSound,
     );
     await this._pushNotificationService.sendPushNotification(
       pushNotification,

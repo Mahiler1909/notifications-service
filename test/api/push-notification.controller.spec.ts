@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { PushNotificationController } from '../../src/presentation/api/push-notification.controller';
 import { CommandBus, CqrsModule } from '@nestjs/cqrs';
 import { PushNotificationRequestDto } from '../../src/presentation/api/dto/push-notification-request.dto';
+import { NotificationType } from '../../src/domain/push-notifications/enums/notification-type.enum';
 
 describe('PushNotificationController', () => {
   let controller: PushNotificationController;
@@ -47,6 +48,39 @@ describe('PushNotificationController', () => {
         body: 'Body',
         imageUrl: null,
         payload: { key: 'value' },
+      }),
+    );
+  });
+
+  it('should pass notificationType and customSound to command', async () => {
+    // Arrange
+    const commandBusExecute = jest.spyOn(commandBus, 'execute');
+    commandBusExecute.mockResolvedValue(undefined);
+
+    const dto = {
+      deviceTokens: ['token-1'],
+      notification: {
+        title: 'Test',
+        body: 'Body',
+        imageUrl: null,
+        payload: { bigText: 'Expanded text...' },
+        notificationType: NotificationType.BIG_TEXT,
+        customSound: 'chat_sound',
+      },
+    } as PushNotificationRequestDto;
+
+    // Act
+    await controller.sendPushNotification(dto);
+
+    // Assert
+    expect(commandBusExecute).toHaveBeenCalledWith(
+      expect.objectContaining({
+        deviceTokens: ['token-1'],
+        title: 'Test',
+        body: 'Body',
+        notificationType: NotificationType.BIG_TEXT,
+        customSound: 'chat_sound',
+        payload: { bigText: 'Expanded text...' },
       }),
     );
   });
